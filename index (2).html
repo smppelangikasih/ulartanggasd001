@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ular Tangga Edukasi - Aku Berani & Mandiri</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 100%);
+            touch-action: manipulation;
+            user-select: none;
+        }
+
+        /* 3D Rolling Dice Styling */
+        .dice-scene {
+            width: 70px;
+            height: 70px;
+            perspective: 500px;
+            margin: auto;
+        }
+        .dice {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease-out; /* Smooth snapping after roll */
+        }
+
+        /* Fast realistic 3D roll animation */
+        @keyframes fastRoll {
+            0% { transform: translateZ(-35px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+            15% { transform: translateZ(-35px) rotateX(270deg) rotateY(360deg) rotateZ(90deg); }
+            30% { transform: translateZ(-35px) rotateX(540deg) rotateY(180deg) rotateZ(270deg); }
+            50% { transform: translateZ(-35px) rotateX(810deg) rotateY(450deg) rotateZ(180deg); }
+            70% { transform: translateZ(-35px) rotateX(1080deg) rotateY(630deg) rotateZ(360deg); }
+            85% { transform: translateZ(-35px) rotateX(1350deg) rotateY(900deg) rotateZ(540deg); }
+            100% { transform: translateZ(-35px) rotateX(1440deg) rotateY(1080deg) rotateZ(720deg); }
+        }
+
+        .rolling {
+            animation: fastRoll 1s cubic-bezier(0.1, 0.7, 0.1, 1) forwards;
+        }
+
+        .dice-face {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: #ffffff;
+            border: 3px solid #f59e0b;
+            border-radius: 16px;
+            display: grid;
+            grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+            padding: 6px;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .dot {
+            background-color: #ef4444;
+            border-radius: 50%;
+            align-self: center;
+            justify-self: center;
+            width: 12px;
+            height: 12px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
+        }
+
+        /* 3D Dice Face Orientations */
+        .show-1 { transform: translateZ(-35px) rotateY(0deg); }
+        .show-2 { transform: translateZ(-35px) rotateY(-90deg); }
+        .show-3 { transform: translateZ(-35px) rotateY(-180deg); }
+        .show-4 { transform: translateZ(-35px) rotateY(90deg); }
+        .show-5 { transform: translateZ(-35px) rotateX(-90deg); }
+        .show-6 { transform: translateZ(-35px) rotateX(90deg); }
+
+        .face-1 { transform: rotateY(0deg) translateZ(35px); }
+        .face-2 { transform: rotateY(90deg) translateZ(35px); }
+        .face-3 { transform: rotateY(180deg) translateZ(35px); }
+        .face-4 { transform: rotateY(-90deg) translateZ(35px); }
+        .face-5 { transform: rotateX(90deg) translateZ(35px); }
+        .face-6 { transform: rotateX(-90deg) translateZ(35px); }
+
+        /* Pawn Styling & Animations */
+        .pawn {
+            transition: left 0.35s ease-in-out, top 0.35s ease-in-out, transform 0.2s ease;
+            filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.4));
+            z-index: 30;
+        }
+        .pawn-moving {
+            animation: pawnBounce 0.35s ease-in-out infinite alternate;
+        }
+        @keyframes pawnBounce {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-14px) scale(1.2); }
+        }
+
+        /* Active Tile Pulse Glow */
+        .active-tile-glow {
+            box-shadow: inset 0 0 0 3px #f59e0b, 0 0 12px 2px #f59e0b;
+            background-color: rgba(245, 158, 11, 0.2);
+            animation: pulseGlow 1s infinite alternate;
+        }
+        @keyframes pulseGlow {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.8; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-2 sm:p-4">
+
+    <!-- Background Music Element -->
+    <audio id="bgm-audio" src="musicbgm.mp3" loop preload="auto"></audio>
+
+    <!-- Header Navigation -->
+    <header class="w-full max-w-5xl bg-white/90 backdrop-blur-md rounded-2xl p-3 sm:p-4 shadow-lg border-2 border-sky-200 flex flex-col sm:flex-row items-center justify-between gap-2 mb-2">
+        <div class="flex items-center gap-3">
+            <div class="bg-amber-400 text-white p-2.5 sm:p-3 rounded-2xl shadow-inner text-xl sm:text-2xl">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <h1 class="text-lg sm:text-2xl font-bold text-sky-800 tracking-wide">Ular Tangga Edukasi</h1>
+                <p class="text-xs sm:text-sm text-sky-600 font-medium">Kuis: "Aku Berani & Mandiri"</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <!-- Reset Button Added -->
+            <button onclick="restartGame()" class="px-3 py-2 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 transition" title="Mulai Ulang Permainan">
+                <i class="fa-solid fa-rotate-right"></i> <span class="hidden sm:inline">Reset</span>
+            </button>
+            <button id="btn-sound-toggle" onclick="toggleSound()" class="px-3 py-2 bg-sky-100 hover:bg-sky-200 text-sky-700 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 transition">
+                <i id="sound-icon" class="fa-solid fa-volume-high"></i> <span id="sound-text">Suara: ON</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Section -->
+    <main class="w-full max-w-5xl flex flex-col lg:flex-row items-center lg:items-start justify-center gap-4">
+
+        <!-- Board Wrapper -->
+        <div class="w-full flex-1 max-w-[650px] bg-white p-2.5 sm:p-3 rounded-3xl shadow-xl border-4 border-amber-300 relative flex flex-col items-center">
+            
+            <!-- Exact 6:5 Aspect Ratio Container for 6x5 Grid Board -->
+            <div id="board-container" class="relative w-full aspect-[6/5] rounded-2xl overflow-hidden shadow-inner border-2 border-amber-200 bg-sky-100">
+                
+                <!-- Main Board Background Image (Loaded from ulartangga.png) -->
+                <img id="board-img" src="ulartangga.png" alt="Papan Ular Tangga" class="absolute inset-0 w-full h-full object-fill" onerror="handleImageError()" />
+
+                <!-- Image Fallback Message (If file missing locally) -->
+                <div id="image-fallback-banner" class="absolute inset-0 bg-sky-100/95 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center hidden z-10">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500 text-4xl mb-2"></i>
+                    <h3 class="font-bold text-slate-800 text-base">Gambar Board Tidak Ditemukan</h3>
+                    <p class="text-xs text-slate-600 mt-1">Pastikan file <b>ulartangga.png</b> ada di dalam folder yang sama dengan file HTML ini.</p>
+                </div>
+
+                <!-- Tile Grid Overlay Layer -->
+                <div id="grid-overlay" class="absolute inset-0 grid grid-cols-6 grid-rows-5 pointer-events-none">
+                    <!-- Dynamic tile highlights generated via JS -->
+                </div>
+
+                <!-- Pawns Layer -->
+                <div id="pawns-layer" class="absolute inset-0 pointer-events-none z-30"></div>
+            </div>
+
+            <!-- Visual Legend & Info Bar -->
+            <div class="w-full flex items-center justify-between text-[11px] sm:text-xs font-bold text-slate-600 px-2 mt-2">
+                <span class="flex items-center gap-1 text-emerald-600"><i class="fa-solid fa-arrow-up"></i> Tangga (4, 8, 11, 22)</span>
+                <span class="flex items-center gap-1 text-rose-600"><i class="fa-solid fa-worm"></i> Ular (12, 15, 20, 28)</span>
+                <span class="flex items-center gap-1 text-amber-600"><i class="fa-solid fa-trophy"></i> Finish (30)</span>
+            </div>
+        </div>
+
+        <!-- Right Control Panel -->
+        <div class="w-full lg:w-80 flex flex-col gap-3">
+            
+            <!-- Turn Indicator Card -->
+            <div class="bg-white p-3.5 rounded-2xl shadow-lg border-2 border-amber-200 flex flex-col items-center text-center">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Giliran Bermain</span>
+                <div id="turn-indicator" class="flex items-center gap-3 my-1">
+                    <div id="turn-avatar" class="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-lg shadow-md border-2 border-red-700">
+                        1
+                    </div>
+                    <div class="text-left">
+                        <h2 id="turn-name" class="font-bold text-slate-800 text-base leading-tight">Pemain 1</h2>
+                        <span id="turn-status" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Mode Manusia</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dice Roller Card -->
+            <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-2xl shadow-lg border-2 border-amber-300 flex flex-col items-center justify-center gap-3">
+                <div class="dice-scene my-1 relative">
+                    <div id="dice" class="dice show-1">
+                        <div class="dice-face face-1"><div class="dot" style="grid-area: 2/2"></div></div>
+                        <div class="dice-face face-2"><div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 3/3"></div></div>
+                        <div class="dice-face face-3"><div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 2/2"></div><div class="dot" style="grid-area: 3/3"></div></div>
+                        <div class="dice-face face-4"><div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 1/3"></div><div class="dot" style="grid-area: 3/1"></div><div class="dot" style="grid-area: 3/3"></div></div>
+                        <div class="dice-face face-5"><div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 1/3"></div><div class="dot" style="grid-area: 2/2"></div><div class="dot" style="grid-area: 3/1"></div><div class="dot" style="grid-area: 3/3"></div></div>
+                        <div class="dice-face face-6"><div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 1/3"></div><div class="dot" style="grid-area: 2/1"></div><div class="dot" style="grid-area: 2/3"></div><div class="dot" style="grid-area: 3/1"></div><div class="dot" style="grid-area: 3/3"></div></div>
+                    </div>
+                </div>
+
+                <div class="text-center min-h-[20px]">
+                    <span id="dice-result-text" class="text-xs font-bold text-amber-800 block">Klik tombol untuk kocok dadu</span>
+                </div>
+
+                <button id="btn-roll" onclick="rollDice()" class="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 active:scale-95 text-white font-extrabold text-base rounded-xl shadow-md border-b-4 border-orange-600 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-dice text-xl"></i> KOCOK DADU
+                </button>
+            </div>
+
+            <!-- Scoreboard -->
+            <div class="bg-white p-3 rounded-2xl shadow-lg border-2 border-sky-100 flex-1 flex flex-col gap-2">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Posisi 3 Pemain</h3>
+                <div id="players-list" class="flex flex-col gap-2">
+                    <!-- Injected dynamically -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- EDUCATIONAL QUIZ MODAL POPUP -->
+    <div id="modal-edu" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border-4 border-amber-300 overflow-hidden transform transition-all scale-95">
+            
+            <div id="modal-header-bg" class="p-4 bg-gradient-to-r from-amber-400 to-orange-400 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span id="modal-tile-badge" class="bg-white/30 text-white font-extrabold px-3 py-1 rounded-full text-xs">Kotak</span>
+                    <h3 id="modal-title-type" class="font-bold text-xs sm:text-sm tracking-wide uppercase">Kuis Edukasi</h3>
+                </div>
+                <button onclick="speakModalText()" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition" title="Dengarkan Suara">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+
+            <div class="p-5 sm:p-6 flex flex-col items-center text-center gap-3 sm:gap-4">
+                <div id="modal-icon-container" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-3xl sm:text-4xl shadow-inner border-2 border-amber-200">
+                    <i class="fa-solid fa-circle-question"></i>
+                </div>
+
+                <div class="space-y-1.5 w-full">
+                    <h2 id="modal-msg-title" class="text-lg sm:text-xl font-extrabold text-slate-800">Judul Kuis</h2>
+                    <p id="modal-msg-desc" class="text-sm sm:text-base text-slate-700 font-semibold leading-relaxed mt-2 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                        Pertanyaan akan muncul di sini?
+                    </p>
+                </div>
+
+                <div id="modal-actions" class="flex gap-3 w-full mt-2">
+                    <button onclick="submitAnswer(true)" class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-sm sm:text-base rounded-xl shadow-md border-b-4 border-emerald-700 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-check"></i> Ya
+                    </button>
+                    <button onclick="submitAnswer(false)" class="flex-1 py-3 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-bold text-sm sm:text-base rounded-xl shadow-md border-b-4 border-rose-700 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-xmark"></i> Tidak
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VICTORY MODAL POPUP -->
+    <div id="modal-win" class="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <canvas id="confetti-canvas" class="absolute inset-0 pointer-events-none z-10"></canvas>
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border-4 border-yellow-400 p-6 flex flex-col items-center text-center gap-4 relative z-20">
+            <div class="w-24 h-24 rounded-full bg-yellow-100 text-yellow-500 flex items-center justify-center text-5xl shadow-lg border-4 border-yellow-300 animate-bounce">
+                🏆
+            </div>
+            <div>
+                <span class="text-xs font-bold text-amber-500 uppercase tracking-widest">Hore! Selamat!</span>
+                <h2 id="win-player-name" class="text-2xl font-extrabold text-slate-800 mt-1">Pemain 1 Menang!</h2>
+                <p class="text-xs text-slate-500 mt-2">Kamu telah menyelesaikan permainan dan belajar menjadi Anak Berani & Mandiri yang pintar menjaga keselamatan diri!</p>
+            </div>
+            
+            <button onclick="restartGame()" class="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-extrabold text-base rounded-xl shadow-md transition border-b-4 border-orange-600">
+                <i class="fa-solid fa-rotate-right"></i> Main Lagi
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME LOGIC SCRIPT -->
+    <script>
+        /* ==========================================================================
+           1. BOARD TILE DATA & QUIZ MAPPING (30 TILES)
+           ========================================================================== */
+        const BOARD_TILES = [
+            { id: 1, title: "Ayo Mulai!", icon: "fa-flag-checkered" },
+            { id: 2, title: "Cerita Sentuhan Aman", question: "Guru atau orang tua menceritakan tentang sentuhan aman. Apakah kamu mau mendengarkan?", correctAnswer: true, icon: "fa-book-open-reader" },
+            { id: 3, title: "Mengenal Bagian Tubuh", question: "Bolehkah bagian tubuh pribadimu dilihat atau disentuh oleh sembarang orang?", correctAnswer: false, icon: "fa-child" },
+            { id: 4, title: "Berteriak Tolong!", question: "Jika ada orang memaksa menyentuhmu, apakah kamu harus berteriak 'TOLONG, JANGAN SENTUH'?", correctAnswer: true, icon: "fa-hand", ladderTo: 16 },
+            { id: 5, title: "Berani Berkata TIDAK!", question: "Apakah kamu berani bilang TIDAK jika ada yang menyentuh anggota tubuhmu dengan tidak sopan?", correctAnswer: true, icon: "fa-hand-paper" },
+            { id: 6, title: "Membantu Teman", question: "Bolehkah kita membantu meminjamkan alat tulis kepada teman yang membutuhkan?", correctAnswer: true, icon: "fa-pencil" },
+            
+            { id: 7, title: "Bermain Tepuk Tangan", question: "Saat bermain tepuk tangan bersama teman seumuran, apakah sentuhan itu aman?", correctAnswer: true, icon: "fa-hands-clapping" },
+            { id: 8, title: "Menolak Sentuhan Tak Nyaman", question: "Jika kamu merasa tidak nyaman dengan sentuhan seseorang, apakah kamu harus diam saja?", correctAnswer: false, icon: "fa-shield-heart", ladderTo: 18 },
+            { id: 9, title: "Interaksi Baik & Aman", question: "Bolehkah kita bermain melempar bola bersama teman-teman dengan rukun di lapangan?", correctAnswer: true, icon: "fa-volleyball" },
+            { id: 10, title: "Bercerita ke Orang Tua", question: "Apakah kamu harus menceritakan kepada orang tua jika ada hal yang membuatmu bingung atau takut?", correctAnswer: true, icon: "fa-comments" },
+            { id: 11, title: "Melapor Orang Terpercaya", question: "Jika orang tidak dikenal tiba-tiba memelukmu tanpa izin, apakah kamu harus segera lari dan melapor?", correctAnswer: true, icon: "fa-person-running", ladderTo: 24 },
+            { id: 12, title: "Permainan Tidak Aman!", question: "Bolehkah teman mengajakmu bermain dokter-dokteran dan menyentuh perut atau area pribadimu?", correctAnswer: false, icon: "fa-triangle-exclamation", snakeTo: 3 },
+
+            { id: 13, title: "Tubuh Pribadi Terjaga", question: "Apakah penting untuk menjaga bagian tubuh pribadimu agar tidak dilihat orang lain?", correctAnswer: true, icon: "fa-user-shield" },
+            { id: 14, title: "Waspada Orang Tak Dikenal", question: "Jika diajak pergi ke suatu tempat oleh orang dewasa yang tidak kamu kenal, bolehkah kamu ikut?", correctAnswer: false, icon: "fa-user-slash" },
+            { id: 15, title: "Sikap Tidak Baik", question: "Bolehkah kamu menertawakan teman yang merasa takut atau menangis saat disentuh orang lain?", correctAnswer: false, icon: "fa-face-frown-open", snakeTo: 5 },
+            { id: 16, title: "Membantu di Rumah", question: "Apakah membantu ibu atau orang tua memandikan adik bayi adalah hal yang baik?", correctAnswer: true, icon: "fa-baby" },
+            { id: 17, title: "Membela Teman", question: "Jika ada temanmu yang diejek atau diganggu karena merasa tidak nyaman, apakah kamu akan membelanya?", correctAnswer: true, icon: "fa-hand-holding-heart" },
+            { id: 18, title: "Bisa Merawat Tubuh", question: "Apakah kamu bisa menjaga dan merawat kebersihan tubuhmu sendiri setiap hari?", correctAnswer: true, icon: "fa-star" },
+
+            { id: 19, title: "Merawat Kebersihan", question: "Apakah rajin menggosok gigi dan mandi adalah salah satu cara menghargai tubuh kita?", correctAnswer: true, icon: "fa-tooth" },
+            { id: 20, title: "Menjaga Privasi", question: "Bolehkah kamu memotret atau merekam area pribadi temanmu secara diam-diam menggunakan HP?", correctAnswer: false, icon: "fa-lock", snakeTo: 18 },
+            { id: 21, title: "Membaca di Perpustakaan", question: "Apakah membaca buku di perpustakaan bersama teman adalah kegiatan yang bermanfaat?", correctAnswer: true, icon: "fa-book-open" },
+            { id: 22, title: "Tolak Paksaan", question: "Bolehkah kamu mengatakan 'Aku tidak suka' saat dipaksa memeluk seseorang yang tidak kamu inginkan?", correctAnswer: true, icon: "fa-bullhorn", ladderTo: 26 },
+            { id: 23, title: "Ajakan Berbahaya", question: "Jika ada orang tak dikenal memintamu ikut ke rumahnya untuk diberi permen, apakah kamu akan menjawab 'Iya'?", correctAnswer: false, icon: "fa-person-walking-arrow-loop-left" },
+            { id: 24, title: "Tidak Menyimpan Rahasia", question: "Apakah kamu boleh menyimpan rahasia buruk dari orang lain yang membuatmu merasa takut atau risih?", correctAnswer: false, icon: "fa-key" },
+
+            { id: 25, title: "Suka Membantu", question: "Apakah membantu orang tua atau teman yang sedang kesulitan adalah perbuatan yang terpuji?", correctAnswer: true, icon: "fa-hands-holding-child" },
+            { id: 26, title: "Berani Melapor", question: "Jika ada yang mengganggumu atau berbuat jahat, apakah kamu berani melaporkannya ke orang tua/guru?", correctAnswer: true, icon: "fa-chalkboard-user" },
+            { id: 27, title: "Pentingnya Edukasi Diri", question: "Apakah membaca buku cerita tentang cara menjaga keamanan diri sangat bermanfaat untuk kita?", correctAnswer: true, icon: "fa-book-bookmark" },
+            { id: 28, title: "Kamera Tanpa Izin!", question: "Jika seseorang mencoba memotretmu saat di kamar mandi atau ganti baju, apakah kamu harus diam saja?", correctAnswer: false, icon: "fa-camera-retro", snakeTo: 19 },
+            { id: 29, title: "Tahu Batas Tubuh Aman", question: "Apakah kamu sudah tahu batasan bagian tubuh mana yang tidak boleh disentuh orang lain?", correctAnswer: true, icon: "fa-lightbulb" },
+            { id: 30, title: "Selamat Kamu Berhasil!", icon: "fa-trophy" }
+        ];
+
+        const PAWN_CONFIGS = [
+            { name: "Pemain 1", color: "bg-red-500", border: "border-red-700", shadow: "shadow-red-400" },
+            { name: "Pemain 2", color: "bg-blue-500", border: "border-blue-700", shadow: "shadow-blue-400" },
+            { name: "Pemain 3", color: "bg-emerald-500", border: "border-emerald-700", shadow: "shadow-emerald-400" }
+        ];
+
+        /* ==========================================================================
+           2. GAME STATE (3 HUMAN PLAYERS FIXED)
+           ========================================================================== */
+        let players = [
+            { id: 0, name: "Pemain 1", pos: 1, config: PAWN_CONFIGS[0] },
+            { id: 1, name: "Pemain 2", pos: 1, config: PAWN_CONFIGS[1] },
+            { id: 2, name: "Pemain 3", pos: 1, config: PAWN_CONFIGS[2] }
+        ];
+        let currentPlayerIdx = 0;
+        let isRolling = false;
+        let isMoving = false;
+        let soundEnabled = true;
+        let audioCtx = null;
+        let activeModalTileData = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderGridHighlights();
+            renderPlayersList();
+            renderPawns();
+            updateTurnIndicator();
+            window.addEventListener('resize', positionPawns);
+        });
+
+        function handleImageError() {
+            document.getElementById('image-fallback-banner').classList.remove('hidden');
+        }
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Inisialisasi dan jalankan BGM pertama kali (mengatasi larangan autoplay browser)
+            const bgm = document.getElementById('bgm-audio');
+            if (soundEnabled && bgm.paused) {
+                bgm.volume = 0.2; // Volume rendah untuk background music
+                bgm.play().catch(e => console.log("Audio autoplay diblokir:", e));
+            }
+        }
+
+        function renderGridHighlights() {
+            const gridOverlay = document.getElementById('grid-overlay');
+            gridOverlay.innerHTML = '';
+            for (let i = 1; i <= 30; i++) {
+                const el = document.createElement('div');
+                el.id = `highlight-tile-${i}`;
+                el.className = "w-full h-full pointer-events-none transition-all duration-300";
+                gridOverlay.appendChild(el);
+            }
+        }
+
+        function getTileCoordinates(tileNum) {
+            const r = Math.floor((tileNum - 1) / 6); 
+            let c = (tileNum - 1) % 6;
+            if (r % 2 === 1) c = 5 - c; 
+            
+            const x = (c + 0.5) * (100 / 6);
+            const y = ((4 - r) + 0.5) * (100 / 5);
+            return { x, y };
+        }
+
+        function renderPawns() {
+            const container = document.getElementById('pawns-layer');
+            container.innerHTML = '';
+
+            players.forEach((p) => {
+                const pawnEl = document.createElement('div');
+                pawnEl.id = `pawn-${p.id}`;
+                pawnEl.className = `pawn absolute w-6 h-6 sm:w-8 sm:h-8 rounded-full ${p.config.color} border-2 ${p.config.border} ${p.config.shadow} flex items-center justify-center text-white font-extrabold text-[10px] sm:text-xs shadow-lg`;
+                pawnEl.innerText = p.id + 1;
+                container.appendChild(pawnEl);
+            });
+            positionPawns();
+        }
+
+        function positionPawns() {
+            const tileGroups = {};
+            players.forEach(p => {
+                if (!tileGroups[p.pos]) tileGroups[p.pos] = [];
+                tileGroups[p.pos].push(p);
+            });
+
+            Object.keys(tileGroups).forEach(tileNum => {
+                const group = tileGroups[tileNum];
+                const coords = getTileCoordinates(parseInt(tileNum));
+
+                group.forEach((p, index) => {
+                    const pawnEl = document.getElementById(`pawn-${p.id}`);
+                    if (!pawnEl) return;
+
+                    let offsetX = 0, offsetY = 0;
+                    if (group.length === 2) {
+                        offsetX = (index === 0 ? -10 : 10);
+                    } else if (group.length === 3) {
+                        if (index === 0) { offsetX = -10; offsetY = -6; }
+                        else if (index === 1) { offsetX = 10; offsetY = -6; }
+                        else if (index === 2) { offsetX = 0; offsetY = 10; }
+                    }
+
+                    pawnEl.style.left = `calc(${coords.x}% - 12px + ${offsetX}px)`;
+                    pawnEl.style.top = `calc(${coords.y}% - 12px + ${offsetY}px)`;
+                });
+            });
+        }
+
+        function highlightActiveTile(tileNum) {
+            for (let i = 1; i <= 30; i++) {
+                const el = document.getElementById(`highlight-tile-${i}`);
+                if (el) el.className = "w-full h-full pointer-events-none transition-all duration-300";
+            }
+            const activeEl = document.getElementById(`highlight-tile-${tileNum}`);
+            if (activeEl) activeEl.className = "w-full h-full pointer-events-none active-tile-glow";
+        }
+
+        /* ==========================================================================
+           3. GAME MECHANICS (DICE & STEP-BY-STEP MOVEMENT)
+           ========================================================================== */
+        function rollDice() {
+            initAudio();
+            if (isRolling || isMoving) return;
+
+            isRolling = true;
+            document.getElementById('btn-roll').disabled = true;
+            document.getElementById('btn-roll').classList.add('opacity-50', 'cursor-not-allowed');
+
+            playAudioSynth('dice');
+
+            const diceEl = document.getElementById('dice');
+            const resultText = document.getElementById('dice-result-text');
+            resultText.innerText = "Mengocok dadu...";
+
+            const diceValue = Math.floor(Math.random() * 6) + 1;
+            
+            diceEl.className = 'dice';
+            void diceEl.offsetWidth;
+            diceEl.className = 'dice rolling'; 
+
+            setTimeout(() => {
+                isRolling = false;
+                diceEl.className = `dice show-${diceValue}`;
+                resultText.innerText = `${players[currentPlayerIdx].name} dapat angka ${diceValue}!`;
+                
+                setTimeout(() => {
+                    movePlayerSteps(currentPlayerIdx, diceValue);
+                }, 400); 
+            }, 1000);
+        }
+
+        async function movePlayerSteps(playerIdx, steps) {
+            isMoving = true;
+            const player = players[playerIdx];
+            const pawnEl = document.getElementById(`pawn-${player.id}`);
+            pawnEl.classList.add('pawn-moving');
+
+            for (let i = 0; i < steps; i++) {
+                if (player.pos < 30) {
+                    player.pos++;
+                    positionPawns();
+                    highlightActiveTile(player.pos);
+                    updatePlayersListPos();
+                    playAudioSynth('step');
+                    await sleep(350);
+                }
+            }
+
+            pawnEl.classList.remove('pawn-moving');
+
+            if (player.pos === 30) {
+                await sleep(500);
+                triggerVictory(player);
+                return;
+            }
+
+            const currentTile = BOARD_TILES.find(t => t.id === player.pos);
+            if (currentTile && currentTile.question) {
+                showEduModal(currentTile);
+            } else {
+                nextTurn();
+            }
+        }
+
+        async function submitAnswer(isYa) {
+            const player = players[currentPlayerIdx];
+            const currentTile = BOARD_TILES.find(t => t.id === player.pos);
+            
+            window.speechSynthesis?.cancel(); 
+            
+            const modalButtons = document.getElementById('modal-actions');
+            modalButtons.classList.add('hidden'); 
+            
+            const isCorrect = (isYa === currentTile.correctAnswer);
+            const descEl = document.getElementById('modal-msg-desc');
+            
+            if (isCorrect) {
+                playAudioSynth('correct');
+                descEl.innerHTML = `<span class="text-emerald-600 font-bold text-lg"><i class="fa-solid fa-face-smile-beam"></i> Jawabanmu Benar!</span>`;
+                await sleep(1500);
+                closeEduModal();
+                
+                if (currentTile.ladderTo) {
+                    await executeSnakeLadder(player, currentTile.ladderTo, 'ladder');
+                } else if (currentTile.snakeTo) {
+                    await executeSnakeLadder(player, currentTile.snakeTo, 'snake');
+                } else {
+                    nextTurn();
+                }
+            } else {
+                playAudioSynth('wrong');
+                descEl.innerHTML = `<span class="text-rose-600 font-bold text-lg"><i class="fa-solid fa-face-frown"></i> Jawabanmu Salah! Hukuman mundur 1 kotak.</span>`;
+                await sleep(2000);
+                closeEduModal();
+                
+                if (player.pos > 1) {
+                    player.pos--;
+                    const pawnEl = document.getElementById(`pawn-${player.id}`);
+                    pawnEl.classList.add('pawn-moving');
+                    positionPawns();
+                    highlightActiveTile(player.pos);
+                    updatePlayersListPos();
+                    playAudioSynth('step');
+                    await sleep(350);
+                    pawnEl.classList.remove('pawn-moving');
+                }
+                
+                nextTurn();
+            }
+        }
+
+        async function executeSnakeLadder(player, targetPos, type) {
+            await sleep(400);
+            playAudioSynth(type);
+            const textStr = type === 'ladder' 
+                ? `Hore! Naik Tangga ke Kotak ${targetPos}!` 
+                : `Awas! Turun Ular ke Kotak ${targetPos}!`;
+            document.getElementById('dice-result-text').innerText = textStr;
+            
+            player.pos = targetPos;
+            positionPawns();
+            highlightActiveTile(player.pos);
+            updatePlayersListPos();
+            await sleep(600);
+            nextTurn();
+        }
+
+        function nextTurn() {
+            isMoving = false;
+            document.getElementById('btn-roll').disabled = false;
+            document.getElementById('btn-roll').classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('dice-result-text').innerText = "Klik tombol untuk kocok dadu";
+
+            currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
+            updateTurnIndicator();
+        }
+
+        /* ==========================================================================
+           4. UI UPDATES & MODALS
+           ========================================================================== */
+        function updateTurnIndicator() {
+            const cp = players[currentPlayerIdx];
+            const avatar = document.getElementById('turn-avatar');
+            const name = document.getElementById('turn-name');
+
+            avatar.className = `w-10 h-10 rounded-full ${cp.config.color} text-white flex items-center justify-center font-bold text-lg shadow-md border-2 ${cp.config.border}`;
+            avatar.innerText = cp.id + 1;
+            name.innerText = cp.name;
+        }
+
+        function renderPlayersList() {
+            const listContainer = document.getElementById('players-list');
+            listContainer.innerHTML = '';
+            players.forEach(p => {
+                const item = document.createElement('div');
+                item.className = `flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold`;
+                item.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full ${p.config.color} text-white flex items-center justify-center text-[10px] shadow-xs">${p.id + 1}</span>
+                        <span class="text-slate-800">${p.name} 👤</span>
+                    </div>
+                    <span id="pos-badge-${p.id}" class="bg-sky-100 text-sky-800 px-2.5 py-0.5 rounded-md font-extrabold">Kotak ${p.pos}</span>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        function updatePlayersListPos() {
+            players.forEach(p => {
+                const badge = document.getElementById(`pos-badge-${p.id}`);
+                if (badge) badge.innerText = `Kotak ${p.pos}`;
+            });
+        }
+
+        function showEduModal(tileData) {
+            activeModalTileData = tileData;
+            const modal = document.getElementById('modal-edu');
+            const tileBadge = document.getElementById('modal-tile-badge');
+            const iconContainer = document.getElementById('modal-icon-container');
+            const titleEl = document.getElementById('modal-msg-title');
+            const descEl = document.getElementById('modal-msg-desc');
+            const modalButtons = document.getElementById('modal-actions');
+
+            tileBadge.innerText = `Kotak ${tileData.id}`;
+            titleEl.innerText = tileData.title;
+            descEl.innerHTML = tileData.question;
+            iconContainer.innerHTML = `<i class="fa-solid ${tileData.icon}"></i>`;
+            modalButtons.classList.remove('hidden'); 
+
+            modal.classList.remove('hidden');
+
+            if (soundEnabled) speakModalText();
+        }
+
+        function closeEduModal() {
+            document.getElementById('modal-edu').classList.add('hidden');
+            window.speechSynthesis?.cancel();
+        }
+
+        function triggerVictory(winner) {
+            playAudioSynth('win');
+            document.getElementById('win-player-name').innerText = `${winner.name} Menang!`;
+            document.getElementById('modal-win').classList.remove('hidden');
+            startConfetti();
+        }
+
+        function restartGame() {
+            // Tutup semua pop-up yang sedang berjalan
+            document.getElementById('modal-win').classList.add('hidden');
+            document.getElementById('modal-edu').classList.add('hidden');
+            
+            // Hentikan suara dan kembalikan state
+            window.speechSynthesis?.cancel();
+            isRolling = false;
+            isMoving = false;
+            
+            // Aktifkan kembali tombol dadu
+            document.getElementById('btn-roll').disabled = false;
+            document.getElementById('btn-roll').classList.remove('opacity-50', 'cursor-not-allowed');
+
+            // Reset pemain ke kotak awal
+            players.forEach(p => p.pos = 1);
+            currentPlayerIdx = 0;
+            
+            positionPawns();
+            highlightActiveTile(1);
+            updatePlayersListPos();
+            updateTurnIndicator();
+            document.getElementById('dice-result-text').innerText = "Klik tombol untuk kocok dadu";
+        }
+
+        /* ==========================================================================
+           5. AUDIO & TEXT TO SPEECH
+           ========================================================================== */
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            const text = document.getElementById('sound-text');
+            const bgm = document.getElementById('bgm-audio');
+
+            if (soundEnabled) {
+                icon.className = "fa-solid fa-volume-high";
+                text.innerText = "Suara: ON";
+                // Mainkan kembali BGM
+                if(bgm.paused) {
+                    bgm.volume = 0.2;
+                    bgm.play().catch(e => console.log("BGM play failed", e));
+                }
+            } else {
+                icon.className = "fa-solid fa-volume-xmark";
+                text.innerText = "Suara: OFF";
+                window.speechSynthesis?.cancel();
+                // Pause BGM
+                bgm.pause();
+            }
+        }
+
+        function playAudioSynth(type) {
+            if (!soundEnabled || !audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'dice') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(550, now + 0.25);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'step') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, now);
+                osc.frequency.exponentialRampToValueAtTime(850, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'ladder') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.linearRampToValueAtTime(750, now + 0.4);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'snake') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(650, now);
+                osc.frequency.linearRampToValueAtTime(180, now + 0.5);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            } else if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.15);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.exponentialRampToValueAtTime(120, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'win') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.15);
+                osc.frequency.setValueAtTime(783.99, now + 0.3);
+                osc.frequency.setValueAtTime(1046.50, now + 0.45);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+                osc.start(now);
+                osc.stop(now + 0.8);
+            }
+        }
+
+        function speakModalText() {
+            if (!soundEnabled || !('speechSynthesis' in window) || !activeModalTileData) return;
+            window.speechSynthesis.cancel();
+
+            const text = `${activeModalTileData.title}. ${activeModalTileData.question}`;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        /* ==========================================================================
+           6. CONFETTI CELEBRATION
+           ========================================================================== */
+        function startConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f43f5e', '#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6'];
+
+            for (let i = 0; i < 90; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    vy: Math.random() * 3 + 2,
+                    vx: Math.random() * 2 - 1
+                });
+            }
+
+            function animateConfetti() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.y += p.vy;
+                    p.x += p.vx;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (p.y > canvas.height) p.y = -10;
+                });
+                if (!document.getElementById('modal-win').classList.contains('hidden')) {
+                    requestAnimationFrame(animateConfetti);
+                }
+            }
+            animateConfetti();
+        }
+    </script>
+</body>
+</html>
